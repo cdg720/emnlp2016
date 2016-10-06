@@ -19,9 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from process import generate_nbest, remove_duplicates
-from unk import unkify
-
 import collections
 import gzip
 import os
@@ -74,32 +71,7 @@ def _build_vocab(filename):
   return word_to_id
 
 
-def _file_to_word_ids(filename, word_to_id):
-  data = _read_words(filename)
-  return [word_to_id[word] for word in data]
-
-
-# read nbest
-def _file_to_word_ids2(filename, word2id):
-  data = []
-  trees = []
-  idx2tree = []
-  for ts in generate_nbest(gzip.open(filename, 'rb')):
-    for t in ts:
-      t['seq'] = process_tree(t['ptb'], word2id)
-    ts = remove_duplicates(ts)
-    nbest = []
-    for t in ts:
-      nums = [word2id[word] for word in t['seq'].split() + ['<eos>']]
-      for i in xrange(len(nums)):
-        idx2tree.append((len(trees), len(nbest)))
-      nbest.append(t)
-      data.extend(nums)
-    trees.append(nbest)
-  return {'data': data, 'trees': trees, 'idx2tree': idx2tree}
-
-
-def _file_to_word_ids3(filename, word2id):
+def _file_to_word_ids(filename, word2id):
   data = []
   trees = []
   idx2tree = []
@@ -116,6 +88,46 @@ def _file_to_word_ids3(filename, word2id):
       data.extend(nums)
     trees.append(nbest)
   return {'data': data, 'trees': trees, 'idx2tree': idx2tree}
+
+
+def unkify(ws):
+  uk = 'unk'
+  sz = len(ws)-1
+  if ws[0].isupper():
+    uk = 'c' + uk
+  if ws[0].isdigit() and ws[sz].isdigit():
+    uk = uk + 'n'
+  elif sz <= 2:
+    pass
+  elif ws[sz-2:sz+1] == 'ing':
+    uk = uk + 'ing'
+  elif ws[sz-1:sz+1] == 'ed':
+    uk = uk + 'ed'
+  elif ws[sz-1:sz+1] == 'ly':
+    uk = uk + 'ly'
+  elif ws[sz] == 's':
+    uk = uk + 's'
+  elif ws[sz-2:sz+1] == 'est':
+    uk = uk + 'est'
+  elif ws[sz-1:sz+1] == 'er':
+    uk = uk + 'ER'
+  elif ws[sz-2:sz+1] == 'ion':
+    uk = uk + 'ion'
+  elif ws[sz-2:sz+1] == 'ory':
+    uk = uk + 'ory'
+  elif ws[0:2] == 'un':
+    uk = 'un' + uk
+  elif ws[sz-1:sz+1] == 'al':
+    uk = uk + 'al'
+  else:
+    for i in xrange(sz):
+      if ws[i] == '-':
+        uk = uk + '-'
+        break
+      elif ws[i] == '.':
+        uk = uk + '.'
+        break
+  return '<' + uk + '>'
 
 
 def process_tree(line, words, tags=False):
@@ -143,7 +155,7 @@ def process_tree(line, words, tags=False):
       if token.lower() in words:
         new_tokens.append(token.lower())
       else:
-        new_tokens.append(unkify.unkify(token))
+        new_tokens.append(unkify(token))
   return ' ' + ' '.join(new_tokens[1:-1]) + ' '
 
 
@@ -168,32 +180,7 @@ def ptb_raw_data(data_path=None, nbest_path=None):
 
   train_path = os.path.join(data_path, "train.gz")
   word_to_id = _build_vocab(train_path)
-  nbest_data = _file_to_word_ids2(nbest_path, word_to_id)
-  return nbest_data, word_to_id
-
-
-def ptb_raw_data2(data_path=None, nbest_path=None):
-  """Load PTB raw data from data directory "data_path".
-
-  Reads PTB text files, converts strings to integer ids,
-  and performs mini-batching of the inputs.
-
-  The PTB dataset comes from Tomas Mikolov's webpage:
-
-  http://www.fit.vutbr.cz/~imikolov/rnnlm/simple-examples.tgz
-
-  Args:
-    data_path: string path to the directory where simple-examples.tgz has
-      been extracted.
-
-  Returns:
-    tuple (train_data, valid_data, test_data, vocabulary)
-    where each of the data objects can be passed to PTBIterator.
-  """
-
-  train_path = os.path.join(data_path, "train.gz")
-  word_to_id = _build_vocab(train_path)
-  nbest_data = _file_to_word_ids3(nbest_path, word_to_id)
+  nbest_data = _file_to_word_ids(nbest_path, word_to_id)
   return nbest_data, word_to_id
 
 

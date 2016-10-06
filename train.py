@@ -103,19 +103,13 @@ class PTBModel(object):
     # Slightly better results can be obtained with forget gate biases
     # initialized to 1 but the hyperparameters of the model would need to be
     # different than reported in the paper.
-    if config.rnn_cell == 'basic':
-      lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(size,
-                                               forget_bias=config.forget_bias)
-    elif config.rnn_cell == 'lstm':
-      lstm_cell = tf.nn.rnn_cell.LSTMCell(size, size)
-    elif config.rnn_cell == 'gru':
-      lstm_cell = tf.nn.rnn_cell.GRUCell(size)
-    else:
-      lstm_cell = tf.nn.rnn_cell.BasicRNNCell(size)
+    lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=1.0,
+                                             state_is_tuple=True)
     if is_training and config.keep_prob < 1:
       lstm_cell = tf.nn.rnn_cell.DropoutWrapper(
           lstm_cell, output_keep_prob=config.keep_prob)
-    cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * config.num_layers)
+    cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * config.num_layers,
+                                       state_is_tuple=True)
 
     self._initial_state = cell.zero_state(batch_size, tf.float32)
 
@@ -126,16 +120,6 @@ class PTBModel(object):
     if is_training and config.keep_prob < 1:
       inputs = tf.nn.dropout(inputs, config.keep_prob)
 
-    # Simplified version of tensorflow.models.rnn.rnn.py's rnn().
-    # This builds an unrolled LSTM for tutorial purposes only.
-    # In general, use the rnn() or state_saving_rnn() from rnn.py.
-    #
-    # The alternative version of the code below is:
-    #
-    # from tensorflow.models.rnn import rnn
-    # inputs = [tf.squeeze(input_, [1])
-    #           for input_ in tf.split(1, num_steps, inputs)]
-    # outputs, state = rnn.rnn(cell, inputs, initial_state=self._initial_state)
     outputs = []
     state = self._initial_state
     with tf.variable_scope("RNN"):
@@ -152,7 +136,6 @@ class PTBModel(object):
         [logits],
         [tf.reshape(self._targets, [-1])],
         [tf.ones([batch_size * num_steps])])
-    # self._cost = cost = tf.reduce_sum(loss) / batch_size
     cost = tf.reduce_sum(loss) / batch_size
     self._cost = loss
     self._final_state = state
@@ -213,8 +196,6 @@ class MediumConfig(object):
   lr_decay = 0.8
   batch_size = 20
   vocab_size = 9855
-  rnn_cell = 'basic'
-  forget_bias = 1.0
 
 
 def run_epoch(session, m, data, eval_op, verbose=False):
@@ -223,14 +204,26 @@ def run_epoch(session, m, data, eval_op, verbose=False):
   start_time = time.time()
   costs = 0.0
   iters = 0
-  state = m.initial_state.eval()
+  state = []
+  for c, h in m.initial_state: # initial_state: ((c1, m1), (c2, m2))
+    state.append((c.eval(), h.eval()))
   for step, (x, y) in enumerate(reader.ptb_iterator(data, m.batch_size,
                                                     m.num_steps)):
-    cost, state, _ = session.run([m.cost, m.final_state, eval_op],
-                                 {m.input_data: x,
-                                  m.targets: y,
-                                  m.initial_state: state})
-    # costs += cost
+    fetches = []
+    fetches.append(m.cost)
+    fetches.append(eval_op)
+    for c, h in m.final_state: # final_state: ((c1, m1), (c2, m2))
+      fetches.append(c)
+      fetches.append(h)
+    feed_dict = {}
+    feed_dict[m.input_data] = x
+    feed_dict[m.targets] = y
+    for i, (c, h) in enumerate(m.initial_state):
+      feed_dict[c], feed_dict[h] = state[i]
+    res = session.run(fetches, feed_dict)
+    cost = res[0]
+    state_flat = res[2:] # [c1, m1, c2, m2]
+    state = [state_flat[i:i+2] for i in range(0, len(state_flat), 2)]
     costs += np.sum(cost) / m.batch_size
     iters += m.num_steps
 
@@ -261,14 +254,27 @@ def run_epoch2(session, m, nbest, eval_op, eos, verbose=False):
   start_time = time.time()
   costs = 0.0
   iters = 0
-  state = m.initial_state.eval()
+  state = []
+  for c, h in m.initial_state: # initial_state: ((c1, m1), (c2, m2))
+    state.append((c.eval(), h.eval()))
   for step, (x, y, z) in enumerate(
           reader.ptb_iterator2(data, m.batch_size, m.num_steps,
                                nbest['idx2tree'], eos)):
-    cost, state, _ = session.run([m.cost, m.final_state, eval_op],
-                                 {m.input_data: x,
-                                  m.targets: y,
-                                  m.initial_state: state})
+    fetches = []
+    fetches.append(m.cost)
+    fetches.append(eval_op)
+    for c, h in m.final_state: # final_state: ((c1, m1), (c2, m2))
+      fetches.append(c)
+      fetches.append(h)
+    feed_dict = {}
+    feed_dict[m.input_data] = x
+    feed_dict[m.targets] = y
+    for i, (c, h) in enumerate(m.initial_state):
+      feed_dict[c], feed_dict[h] = state[i]
+    res = session.run(fetches, feed_dict)
+    cost = res[0]
+    state_flat = res[2:] # [c1, m1, c2, m2]
+    state = [state_flat[i:i+2] for i in range(0, len(state_flat), 2)]
     costs += np.sum(cost) / m.batch_size
     iters += m.num_steps
 
@@ -322,33 +328,12 @@ def chop(data, eos):
   return new_data
   
 
-def test():
-  config = pickle.load(open(FLAGS.model_path + '.config', 'rb'))
-  _, _, _, valid_nbest_data, _, vocab \
-    = reader.ptb_raw_data(FLAGS.data_path)
-  with tf.Graph().as_default(), tf.Session() as session:
-    initializer = tf.random_uniform_initializer(-config.init_scale,
-                                                config.init_scale)
-    with tf.variable_scope("model", reuse=None, initializer=initializer):
-      m = PTBModel(is_training=True, config=config)
-    with tf.variable_scope("model", reuse=True, initializer=initializer):
-      mvalid = PTBModel(is_training=False, config=config)
-
-    saver = tf.train.Saver()
-    saver.restore(session, FLAGS.model_path)
-    print('Model loaded from: %s' % FLAGS.model_path)
-    valid_f1, num = run_epoch2(session, mvalid, valid_nbest_data,
-                               tf.no_op(), vocab['<eos>'])
-    print("Valid F1: %.2f (%d trees)" % (valid_f1, num))
-    
-
 def train():
   print('data_path: %s' % FLAGS.data_path)
   raw_data = reader.ptb_raw_data(FLAGS.data_path)
-  train_data, valid_data, _, valid_nbest_data, _, vocab = raw_data
+  train_data, valid_data, valid_nbest_data, vocab = raw_data
   train_data = chop(train_data, vocab['<eos>'])
   
-  print('model: %s' % FLAGS.model)
   config = MediumConfig()
   config.init_scale = FLAGS.init_scale
   config.learning_rate = FLAGS.learning_rate
@@ -362,8 +347,6 @@ def train():
   config.lr_decay = FLAGS.lr_decay
   config.batch_size = FLAGS.batch_size
   config.vocab_size = len(vocab)
-  config.rnn_cell = FLAGS.rnn_cell
-  config.forget_bias = FLAGS.forget_bias
   print('init_scale: %.2f' % config.init_scale)
   print('learning_rate: %.2f' % config.learning_rate)
   print('max_grad_norm: %.2f' % config.max_grad_norm)
@@ -376,8 +359,6 @@ def train():
   print('lr_decay: %.2f' % config.lr_decay)
   print('batch_size: %d' % config.batch_size)
   print('vocab_size: %d' % config.vocab_size)
-  print('rnn_cell: %s' % config.rnn_cell)
-  print('forget_bias: %.2f' % config.forget_bias)
   sys.stdout.flush()
   
   eval_config = MediumConfig()
@@ -393,8 +374,6 @@ def train():
   eval_config.lr_decay = FLAGS.lr_decay
   eval_config.batch_size = 200
   eval_config.vocab_size = len(vocab)
-  eval_config.rnn_cell = FLAGS.rnn_cell
-  eval_config.forget_bias = FLAGS.forget_bias
 
   prev = 0
   with tf.Graph().as_default(), tf.Session() as session:

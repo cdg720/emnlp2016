@@ -63,7 +63,7 @@ import numpy as np
 import tensorflow as tf
 from nltk import Tree
 
-import parse_unk_reader
+import reader2
 
 flags = tf.flags
 logging = tf.logging
@@ -94,16 +94,13 @@ class PTBModel(object):
     # Slightly better results can be obtained with forget gate biases
     # initialized to 1 but the hyperparameters of the model would need to be
     # different than reported in the paper.
-    if config.rnn_cell == 'basic':
-      lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=1.0)
-    elif config.rnn_cell == 'lstm':
-      lstm_cell = tf.nn.rnn_cell.LSTMCell(size, size)
-    else:
-      lstm_cell = tf.nn.rnn_cell.GRUCell(size)
+    lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=1.0,
+                                               state_is_tuple=True)
     if is_training and config.keep_prob < 1:
       lstm_cell = tf.nn.rnn_cell.DropoutWrapper(
           lstm_cell, output_keep_prob=config.keep_prob)
-    cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * config.num_layers)
+    cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * config.num_layers,
+                                       state_is_tuple=True)
 
     self._initial_state = cell.zero_state(batch_size, tf.float32)
 
@@ -114,16 +111,6 @@ class PTBModel(object):
     if is_training and config.keep_prob < 1:
       inputs = tf.nn.dropout(inputs, config.keep_prob)
 
-    # Simplified version of tensorflow.models.rnn.rnn.py's rnn().
-    # This builds an unrolled LSTM for tutorial purposes only.
-    # In general, use the rnn() or state_saving_rnn() from rnn.py.
-    #
-    # The alternative version of the code below is:
-    #
-    # from tensorflow.models.rnn import rnn
-    # inputs = [tf.squeeze(input_, [1])
-    #           for input_ in tf.split(1, num_steps, inputs)]
-    # outputs, state = rnn.rnn(cell, inputs, initial_state=self._initial_state)
     outputs = []
     state = self._initial_state
     with tf.variable_scope("RNN"):
@@ -140,7 +127,6 @@ class PTBModel(object):
         [logits],
         [tf.reshape(self._targets, [-1])],
         [tf.ones([batch_size * num_steps])])
-    # self._cost = cost = tf.reduce_sum(loss) / batch_size
     cost = tf.reduce_sum(loss) / batch_size
     self._cost = loss
     self._final_state = state
@@ -187,23 +173,6 @@ class PTBModel(object):
     return self._train_op
 
 
-class SmallConfig(object):
-  """Small config."""
-  init_scale = 0.1
-  learning_rate = 1.0
-  max_grad_norm = 5
-  num_layers = 2
-  num_steps = 20
-  hidden_size = 200
-  max_epoch = 4
-  max_max_epoch = 13
-  keep_prob = 1.0
-  lr_decay = 0.5
-  batch_size = 20
-  vocab_size = 9855
-  rnn_cell = 'basic'
-
-
 class MediumConfig(object):
   """Medium config."""
   init_scale = 0.05
@@ -218,45 +187,8 @@ class MediumConfig(object):
   lr_decay = 0.8
   batch_size = 20
   vocab_size = 9855
-  rnn_cell = 'basic'
 
-
-class LargeConfig(object):
-  """Large config."""
-  init_scale = 0.04
-  learning_rate = 1.0
-  max_grad_norm = 10
-  num_layers = 2
-  num_steps = 35
-  hidden_size = 1500
-  max_epoch = 14
-  max_max_epoch = 55
-  keep_prob = 0.35
-  lr_decay = 1 / 1.15
-  batch_size = 20
-  vocab_size = 9855 # 5
-  # vocab_size = 9945 # 5.tagged
-  # vocab_size = 21730 # 1
-  rnn_cell = 'basic'
-
-
-class TestConfig(object):
-  """Tiny config, for testing."""
-  init_scale = 0.1
-  learning_rate = 1.0
-  max_grad_norm = 1
-  num_layers = 1
-  num_steps = 2
-  hidden_size = 2
-  max_epoch = 1
-  max_max_epoch = 1
-  keep_prob = 1.0
-  lr_decay = 0.5
-  batch_size = 20
-  vocab_size = 9855
-  rnn_cell = 'basic'
-
-
+  
 def run_epoch(session, m, nbest, eval_op, eos, verbose=False):
   """Runs the model on the given data."""
   counts = []
@@ -276,14 +208,27 @@ def run_epoch(session, m, nbest, eval_op, eos, verbose=False):
   start_time = time.time()
   costs = 0.0
   iters = 0
-  state = m.initial_state.eval()
+  state = []
+  for c, h in m.initial_state: # initial_state: ((c1, m1), (c2, m2))
+    state.append((c.eval(), h.eval()))
   for step, (x, y, z) in enumerate(
-          parse_unk_reader.ptb_iterator(data, m.batch_size, m.num_steps,
-                                        nbest['idx2tree'], eos)):
-    cost, state, _ = session.run([m.cost, m.final_state, eval_op],
-                                 {m.input_data: x,
-                                  m.targets: y,
-                                  m.initial_state: state})
+          reader2.ptb_iterator(data, m.batch_size, m.num_steps,
+                               nbest['idx2tree'], eos)):
+    fetches = []
+    fetches.append(m.cost)
+    fetches.append(eval_op)
+    for c, h in m.final_state: # final_state: ((c1, m1), (c2, m2))
+      fetches.append(c)
+      fetches.append(h)
+    feed_dict = {}
+    feed_dict[m.input_data] = x
+    feed_dict[m.targets] = y
+    for i, (c, h) in enumerate(m.initial_state):
+      feed_dict[c], feed_dict[h] = state[i]
+    res = session.run(fetches, feed_dict)
+    cost = res[0]
+    state_flat = res[2:] # [c1, m1, c2, m2]
+    state = [state_flat[i:i+2] for i in range(0, len(state_flat), 2)]
     costs += np.sum(cost) / m.batch_size
     iters += m.num_steps
 
@@ -301,7 +246,6 @@ def run_epoch(session, m, nbest, eval_op, eos, verbose=False):
              iters * m.batch_size / (time.time() - start_time)))
 
   trees = nbest['trees']
-  # print(len(trees), file=sys.stderr)
   bad = []
   num_words = 0
   for i in xrange(len(trees)):
@@ -345,13 +289,11 @@ def get_config():
 def test():
   config = pickle.load(open(FLAGS.model_path + '.config', 'rb'))
   config.batch_size = 10
-  test_nbest_data, vocab = parse_unk_reader.ptb_raw_data2(FLAGS.data_path,
-                                                          FLAGS.nbest_path)
+  test_nbest_data, vocab = reader2.ptb_raw_data(FLAGS.data_path,
+                                                 FLAGS.nbest_path)
   with tf.Graph().as_default(), tf.Session() as session:
     initializer = tf.random_uniform_initializer(-config.init_scale,
                                                 config.init_scale)
-    # with tf.variable_scope("model", reuse=None, initializer=initializer):
-    #   m = PTBModel(is_training=True, config=config)
     with tf.variable_scope("model", reuse=None, initializer=initializer):
       m = PTBModel(is_training=False, config=config)
 
