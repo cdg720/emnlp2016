@@ -70,23 +70,19 @@ logging = tf.logging
 
 flags.DEFINE_string("data_path", None, "data_path")
 flags.DEFINE_float('init_scale', 0.05, 'init_scale')
-flags.DEFINE_float('learning_rate', 1.0, 'learning_rate')
-flags.DEFINE_float('max_grad_norm', 5, 'max_grad_norm')
-flags.DEFINE_integer('num_layers', 2, 'num_layers')
-flags.DEFINE_integer('num_steps', 35, 'num_steps')
-flags.DEFINE_integer('hidden_size', 650, 'hidden_size')
-flags.DEFINE_integer('max_epoch', 6, 'max_epoch')
-flags.DEFINE_integer('max_max_epoch', 39, 'max_max_epoch')
-flags.DEFINE_float('keep_prob', 0.5, 'keep_prob')
-flags.DEFINE_float('lr_decay', 0.8, 'lr_decay')
+flags.DEFINE_float('learning_rate', 0.25, 'learning_rate')
+flags.DEFINE_float('max_grad_norm', 20, 'max_grad_norm')
+flags.DEFINE_integer('num_layers', 3, 'num_layers')
+flags.DEFINE_integer('num_steps', 50, 'num_steps')
+flags.DEFINE_integer('hidden_size', 1500, 'hidden_size')
+flags.DEFINE_integer('max_epoch', 14, 'max_epoch')
+flags.DEFINE_integer('max_max_epoch', 50, 'max_max_epoch')
+flags.DEFINE_float('keep_prob', 0.3, 'keep_prob')
+flags.DEFINE_float('lr_decay', 0.85, 'lr_decay')
 flags.DEFINE_integer('batch_size', 20, 'batch_size')
-flags.DEFINE_string('rnn_cell', 'basic', 'rnn_cell')
-flags.DEFINE_float('forget_bias', 1.0, 'forget_bias')
 flags.DEFINE_string('model_path', None, 'model_path')
-flags.DEFINE_boolean('test', False, 'test')
 
 FLAGS = flags.FLAGS
-
 
 class PTBModel(object):
   """The PTB model."""
@@ -418,14 +414,9 @@ def train():
 def main(_):
   if not FLAGS.data_path:
     raise ValueError("Must set --data_path to PTB data directory")
-  if FLAGS.test and not FLAGS.model_path:
-    raise ValueError("Must set --model_path for testing")
 
   print(' '.join(sys.argv))
-  if not FLAGS.test:
-    train()
-  else:
-    test()
+  train()
     
 
 if __name__ == "__main__":

@@ -118,7 +118,7 @@ if __name__ == '__main__':
       print ptb(t, words)
   else:
     rrp = RerankingParser()
-    parser = 'WSJ-PTB3/parser'
+    parser = 'data/WSJ-PTB3/parser'
     rrp.load_parser_model(parser)
     for gold, nbest in zip(open_file(sys.argv[2]),
                            generate_nbest(open_file(sys.argv[3]))):
