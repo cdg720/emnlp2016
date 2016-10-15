@@ -1,20 +1,3 @@
-# Copyright 2015 Google Inc. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-
-
-"""Utilities for parsing PTB text files."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -80,24 +63,6 @@ def _file_to_word_ids2(filename, word_to_id):
 
 
 def ptb_raw_data(data_path=None):
-  """Load PTB raw data from data directory "data_path".
-
-  Reads PTB text files, converts strings to integer ids,
-  and performs mini-batching of the inputs.
-
-  The PTB dataset comes from Tomas Mikolov's webpage:
-
-  http://www.fit.vutbr.cz/~imikolov/rnnlm/simple-examples.tgz
-
-  Args:
-    data_path: string path to the directory where simple-examples.tgz has
-      been extracted.
-
-  Returns:
-    tuple (train_data, valid_data, test_data, vocabulary)
-    where each of the data objects can be passed to PTBIterator.
-  """
-
   train_path = os.path.join(data_path, "train.gz")
   valid_path = os.path.join(data_path, "dev.gz")
   valid_nbest_path = os.path.join(data_path, "dev_nbest.gz")
@@ -110,24 +75,6 @@ def ptb_raw_data(data_path=None):
 
 
 def ptb_iterator(raw_data, batch_size, num_steps):
-  """Iterate on the raw PTB data.
-
-  This generates batch_size pointers into the raw PTB data, and allows
-  minibatch iteration along these pointers.
-
-  Args:
-    raw_data: one of the raw data outputs from ptb_raw_data.
-    batch_size: int, the batch size.
-    num_steps: int, the number of unrolls.
-
-  Yields:
-    Pairs of the batched data, each a matrix of shape [batch_size, num_steps].
-    The second element of the tuple is the same data time-shifted to the
-    right by one.
-
-  Raises:
-    ValueError: if batch_size or num_steps are too high.
-  """
   raw_data = np.array(raw_data, dtype=np.int32)
 
   data_len = len(raw_data)
