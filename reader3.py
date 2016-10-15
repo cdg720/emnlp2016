@@ -34,17 +34,15 @@ def _file_to_word_ids2(filename, word_to_id):
         count = int(line)
       elif line.startswith('-'):
         tmp = line.split()
-        parser_score = float(tmp[0])
-        gold = int(tmp[1])
-        test = int(tmp[2])
-        matched = int(tmp[3])        
+        gold = int(tmp[0])
+        test = int(tmp[1])
+        matched = int(tmp[2])        
       else:            
         line = line.replace('\n', '<eos>').split()
         line = [word_to_id[word] for word in line]
         for i in xrange(len(line)):
           idx2tree.append((len(scores), len(nbest)))
-        nbest.append({'parser_score': parser_score, 'gold': gold,
-                      'test': test, 'matched': matched})
+        nbest.append({'gold': gold, 'test': test, 'matched': matched})
         count -= 1
         data.extend(line)
         if count == 0:
