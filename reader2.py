@@ -2,8 +2,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import collections
-import gzip
+from utils import unkify
+
+import collections, gzio, os
 import os
 
 import numpy as np
@@ -73,46 +74,6 @@ def _file_to_word_ids(filename, word2id):
   return {'data': data, 'trees': trees, 'idx2tree': idx2tree}
 
 
-def unkify(ws):
-  uk = 'unk'
-  sz = len(ws)-1
-  if ws[0].isupper():
-    uk = 'c' + uk
-  if ws[0].isdigit() and ws[sz].isdigit():
-    uk = uk + 'n'
-  elif sz <= 2:
-    pass
-  elif ws[sz-2:sz+1] == 'ing':
-    uk = uk + 'ing'
-  elif ws[sz-1:sz+1] == 'ed':
-    uk = uk + 'ed'
-  elif ws[sz-1:sz+1] == 'ly':
-    uk = uk + 'ly'
-  elif ws[sz] == 's':
-    uk = uk + 's'
-  elif ws[sz-2:sz+1] == 'est':
-    uk = uk + 'est'
-  elif ws[sz-1:sz+1] == 'er':
-    uk = uk + 'ER'
-  elif ws[sz-2:sz+1] == 'ion':
-    uk = uk + 'ion'
-  elif ws[sz-2:sz+1] == 'ory':
-    uk = uk + 'ory'
-  elif ws[0:2] == 'un':
-    uk = 'un' + uk
-  elif ws[sz-1:sz+1] == 'al':
-    uk = uk + 'al'
-  else:
-    for i in xrange(sz):
-      if ws[i] == '-':
-        uk = uk + '-'
-        break
-      elif ws[i] == '.':
-        uk = uk + '.'
-        break
-  return '<' + uk + '>'
-
-
 def process_tree(line, words, tags=False):
   tokens = line.replace(')', ' )').split()
   nonterminals = []
@@ -143,24 +104,6 @@ def process_tree(line, words, tags=False):
 
 
 def ptb_raw_data(data_path=None, nbest_path=None):
-  """Load PTB raw data from data directory "data_path".
-
-  Reads PTB text files, converts strings to integer ids,
-  and performs mini-batching of the inputs.
-
-  The PTB dataset comes from Tomas Mikolov's webpage:
-
-  http://www.fit.vutbr.cz/~imikolov/rnnlm/simple-examples.tgz
-
-  Args:
-    data_path: string path to the directory where simple-examples.tgz has
-      been extracted.
-
-  Returns:
-    tuple (train_data, valid_data, test_data, vocabulary)
-    where each of the data objects can be passed to PTBIterator.
-  """
-
   train_path = os.path.join(data_path, "train.gz")
   word_to_id = _build_vocab(train_path)
   nbest_data = _file_to_word_ids(nbest_path, word_to_id)
