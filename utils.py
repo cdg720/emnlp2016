@@ -6,15 +6,15 @@ import tensorflow as tf
 class MediumConfig(object):
   """Medium config."""
   init_scale = 0.05
-  learning_rate = 1.0
-  max_grad_norm = 5
-  num_layers = 2
-  num_steps = 35
-  hidden_size = 650
-  max_epoch = 6
-  max_max_epoch = 39
-  keep_prob = 0.5
-  lr_decay = 0.8
+  learning_rate = 0.25
+  max_grad_norm = 20
+  num_layers = 3
+  num_steps = 50
+  hidden_size = 1500
+  max_epoch = 14
+  max_max_epoch = 50
+  keep_prob = 0.3
+  lr_decay = 0.85
   batch_size = 20
 
 
