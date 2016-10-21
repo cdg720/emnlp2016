@@ -59,5 +59,6 @@ nbest has the following format::
 
 Models
 ~~~~~~
-ptb
-`semi <http://cs.brown.edu/~dc65/models/semi.tgz>`_
+ptb model
+
+`semi-supervised model <http://cs.brown.edu/~dc65/models/semi.tgz>`_
