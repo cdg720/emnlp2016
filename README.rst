@@ -12,10 +12,10 @@ Prerequisites
 
 Data Preprocessing
 ~~~~~~~~~~~~~~~~~~~~~~~~
-Run the following commands to process data. wsj-train and wsj-dev are training and development files respectively. Each line should have one tree. ::
+Run the following commands to preprocess data. wsj-train and wsj-dev are training and development files respectively. Each line should have one tree. ::
    
    mkdir emnlp && cd emnlp && git clone https://github.com/cdg720/emnlp2016.git
    ./prepare.sh wsj-train wsj-dev
 
-   To replicate the tri-training data, change lines 39 and 49 in prepare.sh. If you have a license for the 5th Gigaword and want the tri-training data, send me an email with the license at dc65@cs.brown.edu.
+If you have a license for the 5th Gigaword and want the tri-training data, send me an email with the license at dc65@cs.brown.edu. To preprocess the tri-training data, change lines 39 and 49 in prepare.sh and run prepare.sh.
    
