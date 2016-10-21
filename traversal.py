@@ -21,9 +21,10 @@ def generate_nbest(f):
         nbest = []
 
 
-def ptb(t, words):
+def ptb(line, words):
+  t = Tree(line)
   forms = []
-  ptb_recurse(t, words, forms)
+  ptb_recurse(t.subtrees()[0], words, forms)
   return ' ' + ' '.join(forms) + ' '
 
 
@@ -69,8 +70,8 @@ if __name__ == '__main__':
   words = read_vocab(sys.argv[1])
   if len(sys.argv) == 3:
     for line in open_file(sys.argv[2]):
-      t = Tree(line[:-1])
-      print ptb(t.subtrees()[0], words)
+      # t = Tree(line[:-1])
+      print ptb(line[:-1], words)
   else:
     rrp = RerankingParser()
     parser = 'data/WSJ-PTB3/parser'
@@ -78,8 +79,8 @@ if __name__ == '__main__':
     for gold, nbest in zip(open_file(sys.argv[2]),
                            generate_nbest(open_file(sys.argv[3]))):
       for tree in nbest:
-        t = Tree(tree['ptb'])
-        tree['seq'] = ptb(t.subtrees()[0], words)
+        # t = Tree(tree['ptb'])
+        tree['seq'] = ptb(tree['ptb'], words)
       nbest = remove_duplicates(nbest)
       gold = Tree(gold)
       print len(nbest)
