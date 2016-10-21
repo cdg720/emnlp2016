@@ -31,7 +31,7 @@ Training
 ~~~~~~~~
 ::
    
-   mkdir -p models/wsj && python train.py --data_path=data --model_path=models/wsj/model
+   mkdir -p models/wsj && python train.py --data_path=wsj --model_path=models/wsj/model
 
 ::
       
