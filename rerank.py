@@ -2,8 +2,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys, time
+from utils import nbest_iterator
 
+import sys, time
 import cPickle as pickle
 import numpy as np
 import tensorflow as tf
@@ -150,8 +151,8 @@ def run_epoch(session, m, nbest, eval_op, eos, verbose=False):
   for c, h in m.initial_state: # initial_state: ((c1, m1), (c2, m2))
     state.append((c.eval(), h.eval()))
   for step, (x, y, z) in enumerate(
-          reader2.ptb_iterator(data, m.batch_size, m.num_steps,
-                               nbest['idx2tree'], eos)):
+          nbest_iterator(data, m.batch_size, m.num_steps,
+                         nbest['idx2tree'], eos)):
     fetches = []
     fetches.append(m.cost)
     fetches.append(eval_op)

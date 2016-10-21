@@ -3,6 +3,8 @@ from __future__ import division
 from __future__ import print_function
 from random import shuffle
 
+from utils import ptb_iterator, nbest_iterator
+
 import itertools, sys, time
 
 import cPickle as pickle
@@ -191,8 +193,8 @@ def run_epoch2(session, m, nbest, eval_op, eos, verbose=False):
   for c, h in m.initial_state: # initial_state: ((c1, m1), (c2, m2))
     state.append((c.eval(), h.eval()))
   for step, (x, y, z) in enumerate(
-          reader3.ptb_iterator2(data, m.batch_size, m.num_steps,
-                                nbest['idx2tree'], eos)):
+          nbest_iterator(data, m.batch_size, m.num_steps,
+                         nbest['idx2tree'], eos)):
     fetches = []
     fetches.append(m.cost)
     fetches.append(eval_op)
@@ -280,6 +282,7 @@ def train():
   if FLAGS.lr_decay: config.lr_decay = FLAGS.lr_decay
   if FLAGS.batch_size: config.batch_size = FLAGS.batch_size
   config.vocab_size = len(vocab)
+  if FLAGS.silver: config.silver = FLAGS.silver
   print('init_scale: %.2f' % config.init_scale)
   print('learning_rate: %.2f' % config.learning_rate)
   print('max_grad_norm: %.2f' % config.max_grad_norm)
@@ -292,20 +295,20 @@ def train():
   print('lr_decay: %.2f' % config.lr_decay)
   print('batch_size: %d' % config.batch_size)
   print('vocab_size: %d' % config.vocab_size)
-  print('silver: %d' % FLAGS.silver)
+  print('silver: %d' % config.silver)
   sys.stdout.flush()
   
-  eval_config = get_config()
-  eval_config.init_scale = FLAGS.init_scale
-  eval_config.learning_rate = FLAGS.learning_rate
-  eval_config.max_grad_norm = FLAGS.max_grad_norm
-  eval_config.num_layers = FLAGS.num_layers
-  eval_config.num_steps = FLAGS.num_steps
-  eval_config.hidden_size = FLAGS.hidden_size
-  eval_config.max_epoch = FLAGS.max_epoch
-  eval_config.max_max_epoch = FLAGS.max_max_epoch
-  eval_config.keep_prob = FLAGS.keep_prob
-  eval_config.lr_decay = FLAGS.lr_decay
+  eval_config = MediumConfig()
+  eval_config.init_scale = config.init_scale
+  eval_config.learning_rate = config.learning_rate
+  eval_config.max_grad_norm = config.max_grad_norm
+  eval_config.num_layers = config.num_layers
+  eval_config.num_steps = config.num_steps
+  eval_config.hidden_size = config.hidden_size
+  eval_config.max_epoch = config.max_epoch
+  eval_config.max_max_epoch = config.max_max_epoch
+  eval_config.keep_prob = config.keep_prob
+  eval_config.lr_decay = config.lr_decay
   eval_config.batch_size = 200
   eval_config.vocab_size = len(vocab)
 
@@ -350,7 +353,7 @@ def train():
       sys.stdout.flush()
 
       start_time = time.time()
-      for k in xrange(FLAGS.silver):
+      for k in xrange(config.silver):
         try:
           silver_data = silver_generator.next()
         except:

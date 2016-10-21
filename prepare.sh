@@ -5,6 +5,7 @@ if [ "$#" -ne 2 ]; then
     exit
 fi
 
+# One tree per line.
 TRAIN=$1
 DEV=$2
 
