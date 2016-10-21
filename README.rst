@@ -13,11 +13,7 @@ Data Preprocessing
 ~~~~~~~~~~~~~~~~~~~~~~~~
 ::
    
-   shell> mkdir emnlp
-
-
-shell> cd emnlp
-shell> git clone https://github.com/cdg720/emnlp2016.git
-shell> ./prepare.sh wsj-train wsj-dev
+   mkdir emnlp && cd emnlp && git clone https://github.com/cdg720/emnlp2016.git
+   ./prepare.sh wsj-train wsj-dev
 
 
