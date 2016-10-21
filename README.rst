@@ -23,17 +23,17 @@ wsj-train and wsj-dev should have one tree per line::
   Tree 2
   ...
 
-If you have a license for the 5th Gigaword and want the tri-training data we use in the paper, send me an email with the license at dc65@cs.brown.edu. To preprocess the tri-training data, change lines 39 and 49 in prepare.sh appropriately and run prepare.sh.
+If you have a license for the 5th Gigaword and want the tri-training data we use in the paper, send me an email with the license at dc65@cs.brown.edu. To preprocess the tri-training data, change lines 38 and 48 in prepare.sh appropriately and run prepare.sh.
    
 Training
 ~~~~~~~~
 ::
    
-   python train.py --data_path=data --model_path=models/ptb/model
+   mkdir -p models/wsj && python train.py --data_path=data --model_path=models/wsj/model
 
 ::
       
-   python tri_train.py --data_path=semi --model_path=models/semi/model
+   mkdir -p models/semi && python tri_train.py --data_path=semi --model_path=models/semi/model
    
 Reranking
 ~~~~~~~~~
