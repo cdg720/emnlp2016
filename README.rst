@@ -36,7 +36,7 @@ Training
 ::
       
    mkdir -p models/semi && python tri_train.py --data_path=semi --model_path=models/semi/model
-   
+
 Reranking
 ~~~~~~~~~
 ::
