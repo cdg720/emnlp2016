@@ -2,7 +2,7 @@ LSTM Parse Reranker
 ----------------------
 Overview
 ~~~~~~
-Code and models used in ``Parsing as Language Modeling <http://cs.brown.edu/people/dc65/papers/emnlp16.pdf>`_.
+Code and models used in `Parsing as Language Modeling <http://cs.brown.edu/people/dc65/papers/emnlp16.pdf>`_.
 
 Prerequisites
 ~~~~~~~~~~~~
