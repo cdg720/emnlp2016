@@ -2,6 +2,8 @@ from __future__ import absolute_import, division, print_function
 from random import shuffle
 from utils import MediumConfig, PTBModel, chop, run_epoch, run_epoch2
 
+from utils import ptb_iterator, nbest_iterator
+
 import itertools, sys, time
 
 import cPickle as pickle
@@ -31,224 +33,6 @@ flags.DEFINE_integer('silver', None, 'silver')
 FLAGS = flags.FLAGS
 
 
-# class PTBModel(object):
-#   def __init__(self, is_training, config):
-#     self.batch_size = batch_size = config.batch_size
-#     self.num_steps = num_steps = config.num_steps
-#     size = config.hidden_size
-#     vocab_size = config.vocab_size
-
-#     self._input_data = tf.placeholder(tf.int32, [batch_size, num_steps])
-#     self._targets = tf.placeholder(tf.int32, [batch_size, num_steps])
-
-#     lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=1.0,
-#                                              state_is_tuple=True)
-#     if is_training and config.keep_prob < 1:
-#       lstm_cell = tf.nn.rnn_cell.DropoutWrapper(
-#           lstm_cell, output_keep_prob=config.keep_prob)
-#     cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * config.num_layers,
-#                                        state_is_tuple=True)
-
-#     self._initial_state = cell.zero_state(batch_size, tf.float32)
-
-#     with tf.device("/cpu:0"):
-#       embedding = tf.get_variable("embedding", [vocab_size, size])
-#       inputs = tf.nn.embedding_lookup(embedding, self._input_data)
-
-#     if is_training and config.keep_prob < 1:
-#       inputs = tf.nn.dropout(inputs, config.keep_prob)
-
-#     inputs = [tf.squeeze(input_, [1])
-#               for input_ in tf.split(1, num_steps, inputs)]
-#     outputs, state = tf.nn.rnn(cell, inputs, initial_state=self._initial_state)
-
-#     output = tf.reshape(tf.concat(1, outputs), [-1, size])
-#     softmax_w = tf.get_variable("softmax_w", [size, vocab_size])
-#     softmax_b = tf.get_variable("softmax_b", [vocab_size])
-#     logits = tf.matmul(output, softmax_w) + softmax_b
-#     loss = tf.nn.seq2seq.sequence_loss_by_example(
-#         [logits],
-#         [tf.reshape(self._targets, [-1])],
-#         [tf.ones([batch_size * num_steps])])
-#     cost = tf.reduce_sum(loss) / batch_size
-#     self._cost = loss
-#     self._final_state = state
-
-#     if not is_training:
-#       return
-
-#     self._lr = tf.Variable(0.0, trainable=False)
-#     tvars = tf.trainable_variables()
-#     grads, _ = tf.clip_by_global_norm(tf.gradients(cost, tvars),
-#                                       config.max_grad_norm)
-#     optimizer = tf.train.GradientDescentOptimizer(self.lr)
-#     self._train_op = optimizer.apply_gradients(zip(grads, tvars))
-
-#   def assign_lr(self, session, lr_value):
-#     session.run(tf.assign(self.lr, lr_value))
-
-#   @property
-#   def input_data(self):
-#     return self._input_data
-
-#   @property
-#   def targets(self):
-#     return self._targets
-
-#   @property
-#   def initial_state(self):
-#     return self._initial_state
-
-#   @property
-#   def cost(self):
-#     return self._cost
-
-#   @property
-#   def final_state(self):
-#     return self._final_state
-
-#   @property
-#   def lr(self):
-#     return self._lr
-
-#   @property
-#   def train_op(self):
-#     return self._train_op
-
-
-# class MediumConfig(object):
-#   init_scale = 0.05
-#   learning_rate = 0.25
-#   max_grad_norm = 20
-#   num_layers = 3
-#   num_steps = 50
-#   hidden_size = 1500
-#   max_epoch = 14
-#   max_max_epoch = 50
-#   keep_prob = 0.3
-#   lr_decay = 0.85
-#   batch_size = 20
-#   silver = 10
-
-
-# def run_epoch(session, m, data, eval_op, verbose=False):
-#   epoch_size = ((len(data) // m.batch_size) - 1) // m.num_steps
-#   start_time = time.time()
-#   costs = 0.0
-#   iters = 0
-#   state = []
-#   for c, h in m.initial_state: # initial_state: ((c1, m1), (c2, m2))
-#     state.append((c.eval(), h.eval()))
-#   for step, (x, y) in enumerate(
-#           reader3.ptb_iterator(data, m.batch_size, m.num_steps)):
-#     fetches = []
-#     fetches.append(m.cost)
-#     fetches.append(eval_op)
-#     for c, h in m.final_state: # final_state: ((c1, m1), (c2, m2))
-#       fetches.append(c)
-#       fetches.append(h)
-#     feed_dict = {}
-#     feed_dict[m.input_data] = x
-#     feed_dict[m.targets] = y
-#     for i, (c, h) in enumerate(m.initial_state):
-#       feed_dict[c], feed_dict[h] = state[i]
-#     res = session.run(fetches, feed_dict)
-#     cost = res[0]
-#     state_flat = res[2:] # [c1, m1, c2, m2]
-#     state = [state_flat[i:i+2] for i in range(0, len(state_flat), 2)]
-#     costs += np.sum(cost) / m.batch_size
-#     iters += m.num_steps
-
-#     if verbose and step % (epoch_size // 10) == 10:
-#       print("%.3f perplexity: %.3f speed: %.0f wps" %
-#             (step * 1.0 / epoch_size, np.exp(costs / iters),
-#              iters * m.batch_size / (time.time() - start_time)))
-
-#   return np.exp(costs / iters)
-
-
-# def run_epoch2(session, m, nbest, eval_op, eos, verbose=False):
-#   counts = []
-#   loss = []
-#   prev = (-1, -1)
-#   for pair in nbest['idx2tree']:
-#     if pair[0] != prev[0]:
-#       counts.append([0])
-#       loss.append([0.])
-#     elif pair[1] == prev[1] + 1:
-#       counts[-1].append(0)
-#       loss[-1].append(0.)
-#     counts[-1][-1] += 1
-#     prev = pair
-#   data = nbest['data']    
-#   epoch_size = ((len(data) // m.batch_size) - 1) // m.num_steps
-#   start_time = time.time()
-#   costs = 0.0
-#   iters = 0
-#   # state = m.initial_state.eval()
-#   state = []
-#   for c, h in m.initial_state: # initial_state: ((c1, m1), (c2, m2))
-#     state.append((c.eval(), h.eval()))
-#   for step, (x, y, z) in enumerate(
-#           reader.ptb_iterator2(data, m.batch_size, m.num_steps,
-#                                nbest['idx2tree'], eos)):
-#     fetches = []
-#     fetches.append(m.cost)
-#     fetches.append(eval_op)
-#     for c, h in m.final_state: # final_state: ((c1, m1), (c2, m2))
-#       fetches.append(c)
-#       fetches.append(h)
-#     feed_dict = {}
-#     feed_dict[m.input_data] = x
-#     feed_dict[m.targets] = y
-#     for i, (c, h) in enumerate(m.initial_state):
-#       feed_dict[c], feed_dict[h] = state[i]
-#     res = session.run(fetches, feed_dict)
-#     cost = res[0]
-#     state_flat = res[2:] # [c1, m1, c2, m2]
-#     state = [state_flat[i:i+2] for i in range(0, len(state_flat), 2)]
-#     costs += np.sum(cost) / m.batch_size
-#     iters += m.num_steps
-
-#     cost = cost.reshape((m.batch_size, m.num_steps))
-#     for idx, val in np.ndenumerate(cost):
-#       tree_idx = z[idx[0]][idx[1]]
-#       if tree_idx[0] == -1: # dummy
-#         continue
-#       counts[tree_idx[0]][tree_idx[1]] -= 1
-#       loss[tree_idx[0]][tree_idx[1]] += cost[idx[0]][idx[1]]
-              
-#     if verbose and step % (epoch_size // 10) == 10:
-#       print("%.3f perplexity: %.3f speed: %.0f wps" %
-#             (step * 1.0 / epoch_size, np.exp(costs / iters),
-#              iters * m.batch_size / (time.time() - start_time)))
-
-#   scores = nbest['scores']
-#   num = 0
-#   gold, test, matched = 0, 0, 0
-#   bad = []
-#   for i in xrange(len(scores)):
-#     good = True
-#     ag = 0
-#     min_val = 10000000
-#     for j in xrange(len(scores[i])):
-#       if counts[i][j] != 0:
-#         bad.append(i)
-#         good = False
-#         break
-#       if loss[i][j] < min_val:
-#         min_val = loss[i][j]
-#         ag = j
-#     if good:
-#       num += 1      
-#       gold += scores[i][ag]['gold']
-#       test += scores[i][ag]['test']
-#       matched += scores[i][ag]['matched']
-#   if bad:
-#     print('bad: %s' % ', '.join([str(x) for x in bad]))
-#   return 200. * matched / (gold + test), num
-
-
 def train():
   print('data_path: %s' % FLAGS.data_path)
   raw_data = reader.ptb_raw_data3(FLAGS.data_path)
@@ -268,6 +52,7 @@ def train():
   if FLAGS.lr_decay: config.lr_decay = FLAGS.lr_decay
   if FLAGS.batch_size: config.batch_size = FLAGS.batch_size
   config.vocab_size = len(vocab)
+  if FLAGS.silver: config.silver = FLAGS.silver
   print('init_scale: %.2f' % config.init_scale)
   print('learning_rate: %.2f' % config.learning_rate)
   print('max_grad_norm: %.2f' % config.max_grad_norm)
@@ -280,7 +65,7 @@ def train():
   print('lr_decay: %.2f' % config.lr_decay)
   print('batch_size: %d' % config.batch_size)
   print('vocab_size: %d' % config.vocab_size)
-  print('silver: %d' % FLAGS.silver)
+  print('silver: %d' % config.silver)
   sys.stdout.flush()
   
   eval_config = MediumConfig()
@@ -338,7 +123,7 @@ def train():
       sys.stdout.flush()
 
       start_time = time.time()
-      for k in xrange(FLAGS.silver):
+      for k in xrange(config.silver):
         try:
           silver_data = silver_generator.next()
         except:

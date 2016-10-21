@@ -2,8 +2,9 @@ from __future__ import absolute_import, division, print_function
 from random import shuffle
 from utils import MediumConfig, PTBModel, chop, run_epoch, run_epoch2
 
-import itertools, sys, time
+from utils import nbest_iterator, ptb_iterator
 
+import itertools, sys, time
 import cPickle as pickle
 import numpy as np
 import tensorflow as tf
@@ -28,6 +29,7 @@ flags.DEFINE_integer('batch_size', None, 'batch_size')
 flags.DEFINE_string('model_path', None, 'model_path')
 
 FLAGS = flags.FLAGS
+
 
 def train():
   print('data_path: %s' % FLAGS.data_path)

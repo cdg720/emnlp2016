@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 from utils import PTBModel, MediumConfig
 
+import sys, time
 import cPickle as pickle
 import numpy as np
 import tensorflow as tf
