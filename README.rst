@@ -2,6 +2,7 @@ LSTM Parse Reranker
 ----------------------
 Overview
 ~~~~~~
+In Preparation
 
 Prerequisites
 ~~~~~~~~~~~~
@@ -11,7 +12,7 @@ Prerequisites
 
 Data Preprocessing
 ~~~~~~~~~~~~~~~~~~~~~~~~
-::
+Run the following commands to process data. wsj-train and wsj-dev are training and development files. Each line should have one tree. ::
    
    mkdir emnlp && cd emnlp && git clone https://github.com/cdg720/emnlp2016.git
    ./prepare.sh wsj-train wsj-dev
