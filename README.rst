@@ -24,7 +24,9 @@ wsj-train and wsj-dev should have one tree per line::
   ...
 
 If you have a license for the 5th Gigaword and want the tri-training data we use in the paper, send me an email with the license at dc65@cs.brown.edu. To preprocess the tri-training data, change lines 38 and 48 in prepare.sh appropriately and run prepare.sh.
-   
+
+Training and reranking code is based on ptb_word_lm.py and reader.py of the tensorflow RNN tutorial.
+
 Training
 ~~~~~~~~
 ::
@@ -59,6 +61,6 @@ nbest has the following format::
 
 Models
 ~~~~~~
-ptb model
+ptb model (coming soon)
 
 `semi-supervised model <http://cs.brown.edu/~dc65/models/semi.tgz>`_
