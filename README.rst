@@ -28,14 +28,17 @@ If you have a license for the 5th Gigaword and want the tri-training data we use
 Training
 ~~~~~~~~
 ::
+   
    python train.py --data_path=data --model_path=models/ptb/model
 
 ::
+      
    python tri_train.py --data_path=semi --model_path=models/semi/model
    
 Reranking
 ~~~~~~~~~
 ::
+   
    python rerank.py --data_path=data --model_path=models/ptb/model --nbest_path=nbest
 
 
