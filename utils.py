@@ -1,9 +1,4 @@
 import collections, gzip
-import numpy as np
-
-def _read_words(filename):
-  with gzip.open(filename, 'rb') as f:
-    return f.read().replace('\n', '<eos>').split()
 
 
 def _build_vocab(filename):
@@ -17,6 +12,11 @@ def _build_vocab(filename):
 
   return word_to_id
 
+
+def _read_words(filename):
+  with open_file(filename) as f:
+    return f.read().replace('\n', '<eos>').split()
+  
 
 def open_file(path):
   if path.endswith('.gz'):
