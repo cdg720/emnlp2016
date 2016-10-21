@@ -41,4 +41,19 @@ Reranking
    
    python rerank.py --data_path=data --model_path=models/ptb/model --nbest_path=nbest
 
+nbest has the following format::
+
+  n1
+  Tree 1.1
+  Tree 1.2
+  ...
+  Tree 1.n1
+
+  n2
+  Tree 2.1
+  Tree 2.2
+  ...
+  Tree 2.n2
+  
+  ...
 
