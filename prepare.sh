@@ -45,10 +45,11 @@ if false; then
     python traversal.py semi/vocab.gz data/y.gz data/z.gz | \
 	gzip > semi/dev_nbest.gz
 
+    # Path to millions of trees file. One tree per line.
     SILVER='SET THIS PATH'
     python sym2id.py semi/train.gz | gzip > semi/sym2id.gz
     python integerize.py semi/sym2id.gz $SILVER | gzip > semi/silver.gz
 fi
 
 # Remove unnecessary data.
-# rm data/[xyz].gz
+rm data/[xyz].gz

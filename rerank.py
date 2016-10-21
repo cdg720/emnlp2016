@@ -1,14 +1,11 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import sys, time
+from __future__ import absolute_import, division, print_function
+from utils import PTBModel, MediumConfig
 
 import cPickle as pickle
 import numpy as np
 import tensorflow as tf
 
-import reader2
+import reader
 
 flags = tf.flags
 logging = tf.logging
@@ -24,110 +21,7 @@ flags.DEFINE_boolean('nbest', False, 'nbest')
 FLAGS = flags.FLAGS
 
 
-class PTBModel(object):
-  """The PTB model."""
-
-  def __init__(self, is_training, config):
-    self.batch_size = batch_size = config.batch_size
-    self.num_steps = num_steps = config.num_steps
-    size = config.hidden_size
-    vocab_size = config.vocab_size
-
-    self._input_data = tf.placeholder(tf.int32, [batch_size, num_steps])
-    self._targets = tf.placeholder(tf.int32, [batch_size, num_steps])
-
-    lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=1.0,
-                                               state_is_tuple=True)
-    if is_training and config.keep_prob < 1:
-      lstm_cell = tf.nn.rnn_cell.DropoutWrapper(
-          lstm_cell, output_keep_prob=config.keep_prob)
-    cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * config.num_layers,
-                                       state_is_tuple=True)
-
-    self._initial_state = cell.zero_state(batch_size, tf.float32)
-
-    with tf.device("/cpu:0"):
-      embedding = tf.get_variable("embedding", [vocab_size, size])
-      inputs = tf.nn.embedding_lookup(embedding, self._input_data)
-
-    if is_training and config.keep_prob < 1:
-      inputs = tf.nn.dropout(inputs, config.keep_prob)
-
-    inputs = [tf.squeeze(input_, [1])
-              for input_ in tf.split(1, num_steps, inputs)]
-    outputs, state = tf.nn.rnn(cell, inputs, initial_state=self._initial_state)
-
-    output = tf.reshape(tf.concat(1, outputs), [-1, size])
-    softmax_w = tf.get_variable("softmax_w", [size, vocab_size])
-    softmax_b = tf.get_variable("softmax_b", [vocab_size])
-    logits = tf.matmul(output, softmax_w) + softmax_b
-    loss = tf.nn.seq2seq.sequence_loss_by_example(
-        [logits],
-        [tf.reshape(self._targets, [-1])],
-        [tf.ones([batch_size * num_steps])])
-    cost = tf.reduce_sum(loss) / batch_size
-    self._cost = loss
-    self._final_state = state
-
-    if not is_training:
-      return
-
-    self._lr = tf.Variable(0.0, trainable=False)
-    tvars = tf.trainable_variables()
-    grads, _ = tf.clip_by_global_norm(tf.gradients(cost, tvars),
-                                      config.max_grad_norm)
-    optimizer = tf.train.GradientDescentOptimizer(self.lr)
-    self._train_op = optimizer.apply_gradients(zip(grads, tvars))
-
-  def assign_lr(self, session, lr_value):
-    session.run(tf.assign(self.lr, lr_value))
-
-  @property
-  def input_data(self):
-    return self._input_data
-
-  @property
-  def targets(self):
-    return self._targets
-
-  @property
-  def initial_state(self):
-    return self._initial_state
-
-  @property
-  def cost(self):
-    return self._cost
-
-  @property
-  def final_state(self):
-    return self._final_state
-
-  @property
-  def lr(self):
-    return self._lr
-
-  @property
-  def train_op(self):
-    return self._train_op
-
-
-class MediumConfig(object):
-  """Medium config."""
-  init_scale = 0.05
-  learning_rate = 1.0
-  max_grad_norm = 5
-  num_layers = 2
-  num_steps = 35
-  hidden_size = 650
-  max_epoch = 6
-  max_max_epoch = 39
-  keep_prob = 0.5
-  lr_decay = 0.8
-  batch_size = 20
-  vocab_size = 9855
-
-  
-def run_epoch(session, m, nbest, eval_op, eos, verbose=False):
+def score_all_trees(session, m, nbest, eval_op, eos):
   """Runs the model on the given data."""
   counts = []
   loss = []
@@ -143,14 +37,13 @@ def run_epoch(session, m, nbest, eval_op, eos, verbose=False):
     prev = pair
   data = nbest['data']    
   epoch_size = ((len(data) // m.batch_size) - 1) // m.num_steps
-  start_time = time.time()
   costs = 0.0
   iters = 0
   state = []
   for c, h in m.initial_state: # initial_state: ((c1, m1), (c2, m2))
     state.append((c.eval(), h.eval()))
   for step, (x, y, z) in enumerate(
-          reader2.ptb_iterator(data, m.batch_size, m.num_steps,
+          reader.ptb_iterator2(data, m.batch_size, m.num_steps,
                                nbest['idx2tree'], eos)):
     fetches = []
     fetches.append(m.cost)
@@ -178,11 +71,6 @@ def run_epoch(session, m, nbest, eval_op, eos, verbose=False):
       counts[tree_idx[0]][tree_idx[1]] -= 1
       loss[tree_idx[0]][tree_idx[1]] += cost[idx[0]][idx[1]]
               
-    if verbose and step % (epoch_size // 10) == 10:
-      print("%.3f perplexity: %.3f speed: %.0f wps" %
-            (step * 1.0 / epoch_size, np.exp(costs / iters),
-             iters * m.batch_size / (time.time() - start_time)))
-
   trees = nbest['trees']
   bad = []
   num_words = 0
@@ -211,24 +99,11 @@ def run_epoch(session, m, nbest, eval_op, eos, verbose=False):
     print('bad: %s' % ', '.join([str(x) for x in bad]))
 
 
-def get_config():
-  if FLAGS.model == "small":
-    return SmallConfig()
-  elif FLAGS.model == "medium":
-    return MediumConfig()
-  elif FLAGS.model == "large":
-    return LargeConfig()
-  elif FLAGS.model == "test":
-    return TestConfig()
-  else:
-    raise ValueError("Invalid model: %s", FLAGS.model)
-
-
 def rerank():
   config = pickle.load(open(FLAGS.model_path + '.config', 'rb'))
   config.batch_size = 10
-  test_nbest_data, vocab = reader2.ptb_raw_data(FLAGS.data_path,
-                                                 FLAGS.nbest_path)
+  test_nbest_data, vocab = reader.ptb_raw_data2(FLAGS.data_path,
+                                                FLAGS.nbest_path)
   with tf.Graph().as_default(), tf.Session() as session:
     initializer = tf.random_uniform_initializer(-config.init_scale,
                                                 config.init_scale)
@@ -237,7 +112,7 @@ def rerank():
 
     saver = tf.train.Saver()
     saver.restore(session, FLAGS.model_path)
-    run_epoch(session, m, test_nbest_data, tf.no_op(), vocab['<eos>'])
+    score_all_trees(session, m, test_nbest_data, tf.no_op(), vocab['<eos>'])
 
     
 def main(_):
