@@ -61,6 +61,6 @@ nbest has the following format::
 
 Models
 ~~~~~~
-ptb model (coming soon)
+wsj model (coming soon)
 
 `semi-supervised model <http://cs.brown.edu/~dc65/models/semi.tgz>`_
