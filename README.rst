@@ -40,7 +40,7 @@ Training
 Due to stochasticity, training may produce models with slightly different results from what we report in the paper.
    
 ======= ===== ===== ===== ===== ===== =====
-        Paper   1     2     3     4     5
+   ?     Paper   1     2     3     4     5
 ------- ----- ----- ----- ----- ----- -----
 F1(dev)   x       y    z     a     b     c
 ======= ===== ===== ===== ===== ===== =====
