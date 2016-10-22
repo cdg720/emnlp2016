@@ -37,7 +37,7 @@ Training
       
    mkdir -p models/semi && python tri_train.py --data_path=semi --model_path=models/semi/model
 
-Due to stochasticity, runs of training may produce models with slightly different results from what we report in the paper. The following tables report the F1 and number of epochs of several training runs:
+Due to stochasticity, runs of training may produce models with slightly different results from what we report in the paper. The following tables report F1s and numbers of epochs of several training runs:
    
 +--------+-----+-----+-----+-----+-----+-----+
 |  wsj   |Paper|  1  |  2  |   3 |    4|   5 |
