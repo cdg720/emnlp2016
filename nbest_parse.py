@@ -3,7 +3,7 @@ from bllipparser import RerankingParser, Tree
 
 if __name__ == '__main__':
   rrp = RerankingParser()
-  parser = 'data/WSJ-PTB3/parser'
+  parser = 'wsj/WSJ-PTB3/parser'
   rrp.load_parser_model(parser)
   for line in fileinput.input():
     tokens = Tree(line).tokens()
