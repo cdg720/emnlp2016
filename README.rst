@@ -57,7 +57,7 @@ Due to stochasticity, runs of training may produce models with slightly differen
 |# epochs| 26  | 13  |  21 | 31  | 21  | 26  |
 +--------+-----+-----+-----+-----+-----+-----+
 
-Note that the F1s reported here are about 0.05-0.1 lower than they actually are. Between training epochs, we evaluate models with batch size 200, which allows faster but less accurate evaluation. Evaluating with batch size 10 recovers full performance of models.
+Note that the F1s reported here are about 0.05-0.1 lower than they actually are. Between training epochs, we evaluate models with batch size 200, which allows faster but less accurate evaluation. Evaluating with batch size 10 measures performance of models properly.
 
 
 Reranking
