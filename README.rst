@@ -2,7 +2,7 @@ LSTM Parse Reranker
 -------------------
 Overview
 ~~~~~~~~
-Code and models used in our paper:
+We release the code and models used in our paper:
 
 * Do Kook Choe and Eugene Charniak. "`Parsing as Language Modeling <http://cs.brown.edu/people/dc65/papers/emnlp16.pdf>`_." Proceedings of the Conference on Empirical Methods in Natural Language Processing, 2016.
 
