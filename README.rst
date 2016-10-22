@@ -14,7 +14,7 @@ Prerequisites
 
 Data Preprocessing
 ~~~~~~~~~~~~~~~~~~
-Run the following commands to preprocess data.::
+Run the following commands to preprocess the WSJ data::
    
    mkdir emnlp && cd emnlp && git clone https://github.com/cdg720/emnlp2016.git
    ./prepare.sh wsj-train wsj-dev
