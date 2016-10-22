@@ -33,11 +33,11 @@ Training
 ~~~~~~~~
 ::
    
-   mkdir -p models/wsj && python train.py --data_path=wsj [--model_path=models/wsj/model]
+   mkdir -p models/wsj && python train.py --data_path=wsj --model_path=models/wsj/model
 
 ::
       
-   mkdir -p models/semi && python tri_train.py --data_path=semi [--model_path=models/semi/model]
+   mkdir -p models/semi && python tri_train.py --data_path=semi --model_path=models/semi/model
 
 Due to stochasticity, runs of training may produce models with slightly different results from what we report in the paper. We have retrained a few models after the submission of our paper and we report F1s and numbers of epochs of several training runs:
    
