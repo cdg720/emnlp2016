@@ -37,11 +37,17 @@ Training
       
    mkdir -p models/semi && python tri_train.py --data_path=semi --model_path=models/semi/model
 
+Due to stochasticity, training may produce models with slightly different results from what we report in the paper.
+   
+===== ===== ===== ===== ===== =====
+Paper   1     2     3     4     5
+----- ----- ----- ----- ----- -----
+
 Reranking
 ~~~~~~~~~
 ::
    
-   python rerank.py --data_path=data --model_path=models/ptb/model --nbest_path=nbest
+   python rerank.py --data_path=data --model_path=models/wsj/model --nbest_path=nbest
 
 nbest has the following format::
 
