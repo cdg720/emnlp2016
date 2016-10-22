@@ -70,7 +70,6 @@ if __name__ == '__main__':
   words = read_vocab(sys.argv[1])
   if len(sys.argv) == 3:
     for line in open_file(sys.argv[2]):
-      # t = Tree(line[:-1])
       print ptb(line[:-1], words)
   else:
     rrp = RerankingParser()
@@ -79,7 +78,6 @@ if __name__ == '__main__':
     for gold, nbest in zip(open_file(sys.argv[2]),
                            generate_nbest(open_file(sys.argv[3]))):
       for tree in nbest:
-        # t = Tree(tree['ptb'])
         tree['seq'] = ptb(tree['ptb'], words)
       nbest = remove_duplicates(nbest)
       gold = Tree(gold)
