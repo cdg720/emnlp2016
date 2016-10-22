@@ -43,7 +43,7 @@ Due to stochasticity, training may produce models with slightly different result
 |   ?   |Paper|  1  |  2  |   3 |    4|   5 |
 +-------+-----+-----+-----+-----+-----+-----+
 |F1(dev)|   x |    y|    z|    a|    b|    c|
---------+-----+-----+-----+-----+-----+-----+
++-------+-----+-----+-----+-----+-----+-----+
 
 Reranking
 ~~~~~~~~~
