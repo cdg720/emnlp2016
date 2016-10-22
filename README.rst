@@ -37,8 +37,7 @@ Training
       
    mkdir -p models/semi && python tri_train.py --data_path=semi --model_path=models/semi/model
 
-Due to stochasticity, training may produce models with slightly different results from what we report in the paper.
-   
+Due to stochasticity, training may produce models with slightly different results from what we report in the paper. The following tables report performance of several training runs:   
 +--------+-----+-----+-----+-----+-----+-----+
 |  wsj   |Paper|  1  |  2  |   3 |    4|   5 |
 +--------+-----+-----+-----+-----+-----+-----+
@@ -48,7 +47,7 @@ Due to stochasticity, training may produce models with slightly different result
 +--------+-----+-----+-----+-----+-----+-----+
 
 +--------+-----+-----+-----+-----+-----+-----+
-|  sem   |Paper|  1  |  2  |   3 |    4|   5 |
+|  semi  |Paper|  1  |  2  |   3 |    4|   5 |
 +--------+-----+-----+-----+-----+-----+-----+
 |F1 (dev)|92.46|92.33|92.52|92.45|92.42|92.42|
 +--------+-----+-----+-----+-----+-----+-----+
