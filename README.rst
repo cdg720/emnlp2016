@@ -88,4 +88,4 @@ wsj model (coming soon)
 
 `semi-supervised model <http://cs.brown.edu/~dc65/models/semi.tgz>`_
 
-Models we use in our paper are not compatible with tensorflow version 11 and we provide models retraiend with the code in this repository.
+The models we use in our paper are not compatible with tensorflow version 11 and we provide new models retraiend with the code in this repository.
