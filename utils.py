@@ -14,7 +14,8 @@ class MediumConfig(object):
   max_epoch = 14
   max_max_epoch = 50
   keep_prob = 0.3
-  lr_decay = 0.85
+  # correction: for wsj model, we use 0.9. 
+  lr_decay = 0.9
   batch_size = 20
 
 
