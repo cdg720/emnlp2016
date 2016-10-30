@@ -44,9 +44,9 @@ Due to stochasticity, runs of training may produce models with slightly differen
 +--------+-----+-----+-----+-----+-----+-----+
 |  wsj   |Paper|  1  |  2  |   3 |    4|   5 |
 +--------+-----+-----+-----+-----+-----+-----+
-|F1 (dev)|91.62|91.40|91.62|91.59|91.51|91.47|
+|F1 (dev)|91.62|91.72|91.55|91.59|91.49|91.50|
 +--------+-----+-----+-----+-----+-----+-----+
-|# epochs| 37  | 47  |  38 | 29  | 45  | 43  |
+|# epochs| 37  | 47  |  38 | 41  | 31  | 49 |
 +--------+-----+-----+-----+-----+-----+-----+
 
 +--------+-----+-----+-----+-----+-----+-----+
@@ -84,7 +84,7 @@ nbest has the following format::
 
 Models
 ~~~~~~
-wsj model (coming soon)
+`wsj model <http://cs.brown.edu/~dc65/models/wsj.tgz>`_
 
 `semi-supervised model <http://cs.brown.edu/~dc65/models/semi.tgz>`_
 
