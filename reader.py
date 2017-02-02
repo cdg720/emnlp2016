@@ -135,9 +135,11 @@ def ptb_raw_data(data_path=None):
 
 
 # read data for reranking.
-def ptb_raw_data2(data_path=None, nbest_path=None):
-  train_path = os.path.join(data_path, "train.gz")
-  word_to_id = _build_vocab(train_path)
+def ptb_raw_data2(vocab_path=None, nbest_path=None):
+  word_to_id = {}
+  for line in open_file(vocab_path):
+    word, word_id = line.split()
+    word_to_id[word] = int(word_id)
   nbest_data = _file_to_word_ids3(nbest_path, word_to_id)
   return nbest_data, word_to_id
 

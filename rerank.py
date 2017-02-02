@@ -11,12 +11,9 @@ import reader
 flags = tf.flags
 logging = tf.logging
 
-flags.DEFINE_string(
-    "model", "medium",
-    "A type of model. Possible options are: small, medium, large.")
-flags.DEFINE_string("data_path", None, "data_path")
 flags.DEFINE_string('model_path', None, 'model_path')
 flags.DEFINE_string('nbest_path', None, 'nbest_path')
+flags.DEFINE_string("vocab_path", None, "vocab_path")
 flags.DEFINE_boolean('nbest', False, 'nbest')
 
 FLAGS = flags.FLAGS
@@ -103,7 +100,7 @@ def score_all_trees(session, m, nbest, eval_op, eos):
 def rerank():
   config = pickle.load(open(FLAGS.model_path + '.config', 'rb'))
   config.batch_size = 10
-  test_nbest_data, vocab = reader.ptb_raw_data2(FLAGS.data_path,
+  test_nbest_data, vocab = reader.ptb_raw_data2(FLAGS.vocab_path,
                                                 FLAGS.nbest_path)
   with tf.Graph().as_default(), tf.Session() as session:
     initializer = tf.random_uniform_initializer(-config.init_scale,
@@ -117,8 +114,8 @@ def rerank():
 
     
 def main(_):
-  if not FLAGS.data_path:
-    raise ValueError("Must set --data_path to PTB data directory")
+  if not FLAGS.vocab_path:
+    raise ValueError("Must set --vocab_path to vocab file")
   if not FLAGS.nbest_path:
     raise ValueError("Must set --nbest_path to nbest data")  
   if not FLAGS.model_path:

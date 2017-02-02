@@ -64,7 +64,7 @@ Reranking
 ~~~~~~~~~
 ::
    
-   python rerank.py --data_path=wsj --model_path=models/wsj/model --nbest_path=nbest
+   python rerank.py --vocab_path=vocabs/wsj.gz --model_path=models/wsj/model --nbest_path=nbest
 
 nbest has the following format::
 
