@@ -21,7 +21,7 @@ Run the following commands to preprocess the WSJ data::
 
 wsj-train and wsj-dev should have one tree per line::
 
-  Tree 1
+  (S1 (S (CC But) (NP (DT the) (NNS ballplayers)) (VP (VBP disagree)) (. .)))
   Tree 2
   ...
 
@@ -69,10 +69,10 @@ Reranking
 nbest has the following format::
 
   n1
-  (S1 (S (ADVP (DT This) (NN time)) (, ,) (NP (DT the) (NNS firms)) (VP (VBD were) (ADJP (JJ ready))) (. .)))
-  (S1 (S (NP (DT This) (NN time)) (, ,) (NP (DT the) (NNS firms)) (VP (VBD were) (NP (JJ ready))) (. .)))
+  (S1 (S (NP (PRP It)) (VP (MD should) (VP (VB run) (ADVP (RB forever)))) (. .)))
+  (S1 (S (NP (PRP It)) (VP (MD should) (VP (VBN run) (ADVP (RB forever)))) (. .)))
   ...
-  (S1 (S (NP (NP (DT This)) (NN time)) (, ,) (NP (DT the) (NNS firms)) (VP (VBD were) (S (ADJP (JJ ready)))) (. .)))
+  (S1 (S (NP (PRP It)) (VP (MD should) (VP (VB run) (NP (RB forever)))) (. .)))
 
   n2
   Tree 2.1
