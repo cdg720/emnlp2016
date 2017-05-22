@@ -69,10 +69,10 @@ Reranking
 nbest has the following format::
 
   n1
-  Tree (S1 (S (ADVP (DT This) (NN time)) (, ,) (NP (DT the) (NNS firms)) (VP (VBD were) (ADJP (JJ ready))) (. .)))
-  Tree (S1 (S (NP (DT This) (NN time)) (, ,) (NP (DT the) (NNS firms)) (VP (VBD were) (NP (JJ ready))) (. .)))
+  (S1 (S (ADVP (DT This) (NN time)) (, ,) (NP (DT the) (NNS firms)) (VP (VBD were) (ADJP (JJ ready))) (. .)))
+  (S1 (S (NP (DT This) (NN time)) (, ,) (NP (DT the) (NNS firms)) (VP (VBD were) (NP (JJ ready))) (. .)))
   ...
-  Tree (S1 (S (NP (NP (DT This)) (NN time)) (, ,) (NP (DT the) (NNS firms)) (VP (VBD were) (S (ADJP (JJ ready)))) (. .)))
+  (S1 (S (NP (NP (DT This)) (NN time)) (, ,) (NP (DT the) (NNS firms)) (VP (VBD were) (S (ADJP (JJ ready)))) (. .)))
 
   n2
   Tree 2.1
